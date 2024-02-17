@@ -1,0 +1,72 @@
+import pandas as pd
+import seaborn as sns
+import numpy as np
+import matplotlib.pyplot as plt
+
+datasaurus_data = pd.read_csv('DatasaurusDozen.csv', delimiter="\t") 
+# "\t" specifies that the fields in the input file are separated by tabs.
+
+datasaurus_data
+#print it to see it
+
+rouped = datasaurus_data.groupby('dataset')
+grouped.agg({'x': ['count', 'mean', 'std'], 'y': ['count', 'mean', 'std']})
+
+sns.scatterplot(data=datasaurus_data, x='x', y='y')
+
+sns.scatterplot(data=datasaurus_data, x='x', y='y', hue="dataset")
+
+sns.scatterplot(data=grouped.get_group("away"), x='x', y='y')
+
+sns.relplot(data=datasaurus_data, x='x', y='y', col='dataset', col_wrap=3)
+
+DataProb2 = pd.read_csv('DataProb2.csv', delimiter=";")
+#This file is seperated by ";"
+
+DataProb2
+#print it to see it
+
+newDataProb = DataProb2.dropna()# takes out 39 rows 
+newDataProb
+
+# Make a list of missing value types
+missing_values = ["n/a", "na", "--", "<undefined>"]
+DataProb2 = pd.read_csv('DataProb2.csv', delimiter=";", na_values = missing_values)
+DataProb2
+
+newDataProb = DataProb2.dropna()# takes out 41 rows 
+newDataProb
+
+columnsCheck = ['JFC_fitting', 'HINT_fitting', 'AverageDailyUseTime', 'Speech', 'Quality', 'Noise', 'Loudness', 'Fatigue', 'Use', 'Fit', 'QoL', 'All', 'RespRate']
+Dataprob3 = newDataProb[~(newDataProb[columnsCheck] > 100).any(axis=1)] # removes one row
+#df[columns_to_check] > 100 creates a DataFrame of the same shape as df[columns_to_check], 
+# with True in places where the original value was over 100, and False otherwise. 
+# The any(axis=1) function returns a Series that is True for any row in the original 
+# DataFrame that has True in any of its columns. The ~ operator inverts this Series, 
+# so it's True for rows that we want to keep and False for rows we want to remove. 
+# Finally, df[~(df[columns_to_check] > 100).any(axis=1)] selects only the rows in the 
+# DataFrame where the Series contains True.
+Dataprob3
+
+counts = Dataprob3['Profile'].value_counts() # counts the number of occurrences of each category in the column.
+Dataprob3 = Dataprob3[Dataprob3['Profile'].isin(counts[counts >= 10].index)] # removes 9 rows
+# selects the categories that occur 10 or more times. 
+# Then selects only the rows in the DataFrame where the category in the column is one of the selected categories.
+Dataprob3
+
+# Filter the data for Profiles A and B
+profiles_AB = Dataprob3[Dataprob3['Profile'].isin(['A', 'B'])]
+
+# Create the scatter plot with linear regression lines
+sns.lmplot(x='JFC_fitting', y='Speech', hue='Profile', data=profiles_AB)
+
+# Create the scatter plot with linear regression lines
+sns.lmplot(x='JFC_fitting', y='Speech', hue='Profile', data=profiles_AB)
+
+# Save the figure as vector-based graphics (PDF or SVG)
+plt.savefig('scatter_plot.pdf')
+plt.savefig('scatter_plot.svg')
+
+# Save the figure as pixel-based format (PNG or JPEG)
+plt.savefig('scatter_plot.png')
+plt.savefig('scatter_plot.jpg')
