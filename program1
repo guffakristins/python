@@ -1,0 +1,98 @@
+import random  # import random library
+
+
+def draw_hangman(i):
+    # method to draw hangman
+    graphics = ['''_____\n|/  |\n|   O\n|  /|\\\n|  / \\\n|''',
+                '''_____\n|/  |\n|   O\n|  /|\\\n|  / \\\n|''',
+                '''_____\n|/  |\n|   O\n|  /|\\\n|  /\n|''',
+                '''_____\n|/  |\n|   O\n|  /|\\\n|\n|''',
+                '''_____\n|/  |\n|   O\n|  /|\n|\n|''',
+                '''_____\n|/  |\n|   O\n|   |\n|\n|''',
+                '''_____\n|/  |\n|   O\n|\n|\n|''',
+                '''_____\n|/  |\n|\n|\n|\n|''',
+                '']
+    print(graphics[i])
+
+
+def pick_random_word():
+    # This function picks a random word from the SOWPODS dictionary.
+    # open the sowpods dictionary as a text file in readable format
+
+    with open("sowpods.txt", 'r') as f: # 'r' stands for read instead of write
+        words = f.readlines()
+
+    # generate a random index
+    # -1 because len(words) is not a valid index into the list `words`
+    index = random.randint(0, len(words) - 1)
+
+    # print out the word at that index
+    # the .strip() function removes all trailing spaces before and after the word
+    word = words[index].strip()
+    return word
+
+
+def ask_user_for_next_letter():
+    letter = input("Guess a letter: ")
+    return letter.strip().upper() # stripping away spaces and keeping letters in upper case
+
+
+def generate_word_string(word, letters_guessed): #generates a string that represents the current state of the word in game
+    # word =  the word that the player is trying to guess letters_guessed = has already guessed
+    output = []
+    for letter in word:
+        if letter in letters_guessed:
+            output.append(letter.upper()) # if player guesses correctly, then it's added (uppercased) to the output list
+        else:
+            output.append("_") # if not guessed correctly, the underscore is appended to represent that the letter is not guessed
+
+    # creates a string from the members of the list by using whitespace as a separator
+    return " ".join(output)
+
+
+WORD = pick_random_word()
+
+# creates a set containing the letters of WORD
+letters_to_guess = set(WORD)
+
+# creates an empty set
+correct_letters_guessed = set()
+incorrect_letters_guessed = set()
+# since the classic order for hangman game takes 8 lost chances to hang the man
+num_guesses = 8
+
+print("Welcome to Hangman! We have picked a word, now it's your time to guess!")
+NO_GUESSES_LEFT = 0
+while (len(letters_to_guess) > 0) and num_guesses > NO_GUESSES_LEFT:
+    # The while loop continues as long as there are still letters to guess and  the player has guesses left
+    guess = ask_user_for_next_letter()
+    
+    if not guess.isalpha():
+        # if number is guessed
+        print("Invalid guess. Please enter a letter.")
+        continue
+
+    if guess in correct_letters_guessed or guess in incorrect_letters_guessed:
+        # if letter been guessed before
+        print("You already guessed that letter.")
+        continue
+
+    if guess in letters_to_guess:
+        # if guessed letter is in the word, it is removed from letters to guess and added to correct letters
+        letters_to_guess.remove(guess)
+        correct_letters_guessed.add(guess)
+    else:
+        # if guessed letter is not in the word it is added to incorrect letters and num of guesses go down -1
+        incorrect_letters_guessed.add(guess)
+        num_guesses -= 1
+
+    # the state of the word is printed and message about how many tries are left, based on the num_guesses
+    word_string = generate_word_string(WORD, correct_letters_guessed)
+    print(word_string)
+    print(f"You have {num_guesses} guesses left")
+    draw_hangman(num_guesses) #draws hangman based on num_guesses
+
+if num_guesses > NO_GUESSES_LEFT:
+    print(f"Congratulations! You correctly guessed the word {WORD}")
+else:
+    print(f"Sorry, you lost! Your word was {WORD}")
