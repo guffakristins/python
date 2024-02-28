@@ -1,0 +1,196 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import MultinomialNB
+from wordcloud import WordCloud
+import nltk
+from nltk.corpus import words
+from skimage.draw import disk
+from IPython.display import Image
+
+data = pd.read_csv("https://raw.githubusercontent.com/amankharwal/Website-data/master/dataset.csv")
+print(data.head())
+
+# This line checks for missing or null values in the dataframe 'data'. 
+# The isnull() function returns a dataframe where each cell is either True or False 
+# depending on that cell's null status.
+# The sum() function then sums this resulting dataframe column-wise, giving a series 
+# where each value is the number of null values in that column.
+data.isnull().sum()
+
+# This line counts the number of occurrences of each unique value in the 'language' column of the dataframe 'data'.
+# The value_counts() function returns a series where the index is the unique values and the values 
+#are the counts of these values.
+data["language"].value_counts()
+
+# This line converts the "Text" column of the 'data' DataFrame into a numpy array and assigns it to 'x'.
+x = np.array(data["Text"])
+
+# This line converts the "language" column of the 'data' DataFrame into a numpy array and assigns it to 'y'.
+y = np.array(data["language"])
+
+# a) Words made up of 5 to 20 letters
+cv_a = CountVectorizer(token_pattern=r'\b\w{5,20}\b')
+
+# b) Words of 3 letters or less
+cv_b = CountVectorizer(token_pattern=r'\b\w{1,3}\b')
+
+# c) Combinations of 3 to 6 words
+# This is a bit more complex and requires a different approach
+# Here we're using n-grams, where n is between 3 and 6
+cv_c = CountVectorizer(ngram_range=(3, 6))
+
+X_a = cv_a.fit_transform(x)
+X_b = cv_b.fit_transform(x)
+X_c = cv_c.fit_transform(x)
+# The fit method is calculating the mean and variance of each of the features present in our data. 
+#The transform method is transforming all the features using the respective mean and variance.
+
+# For the data transformed by cv_a
+X_train_a, X_test_a, y_train_a, y_test_a = train_test_split(X_a, y, test_size=0.33, random_state=42)
+
+# For the data transformed by cv_b
+X_train_b, X_test_b, y_train_b, y_test_b = train_test_split(X_b, y, test_size=0.33, random_state=42)
+
+# For the data transformed by cv_c
+X_train_c, X_test_c, y_train_c, y_test_c = train_test_split(X_c, y, test_size=0.33, random_state=42)
+
+# For the data transformed by cv_a
+model_a = MultinomialNB()
+model_a.fit(X_train_a, y_train_a)
+score_a = model_a.score(X_test_a, y_test_a)
+
+# For the data transformed by cv_b
+model_b = MultinomialNB()
+model_b.fit(X_train_b, y_train_b)
+score_b = model_b.score(X_test_b, y_test_b)
+
+# For the data transformed by cv_c
+model_c = MultinomialNB()
+model_c.fit(X_train_c, y_train_c)
+score_c = model_c.score(X_test_c, y_test_c)
+
+# wordcloud for english sentences
+# get all sentences in english and put them in a list.
+data_english = data[data['language'] == 'English'].Text.to_list()
+
+# prepare a countvectorizer to get unique features (words in this case) and their occurrence
+
+# For cv_a
+x_a = cv_a.fit_transform(data_english)
+ngrams_a = cv_a.get_feature_names_out()
+print(ngrams_a)
+
+# For cv_b
+x_b = cv_b.fit_transform(data_english)
+ngrams_b = cv_b.get_feature_names_out()
+print(ngrams_b)
+
+# For cv_c
+x_c = cv_c.fit_transform(data_english)
+ngrams_c = cv_c.get_feature_names_out()
+print(ngrams_c)
+
+# get the frequency of the ngrams. The toarray() method returns the frequency of each ngram for 
+# each sentence in a list of list, each list corresponding to each sentence. By summing across lists 
+# we can obtain the frequency of occurence for each ngram across all sentences.
+ngrams_freq_a = sum(x_a.toarray())
+ngrams_freq_b = sum(x_b.toarray())
+ngrams_freq_c = sum(x_c.toarray())
+
+# For ngrams_a and ngrams_freq_a
+vocab_a = {}
+for i, k in enumerate(ngrams_a):
+    vocab_a[k] = ngrams_freq_a[i]
+
+# For ngrams_b and ngrams_freq_b
+vocab_b = {}
+for i, k in enumerate(ngrams_b):
+    vocab_b[k] = ngrams_freq_b[i]
+
+# For ngrams_c and ngrams_freq_c
+vocab_c = {}
+for i, k in enumerate(ngrams_c):
+    vocab_c[k] = ngrams_freq_c[i]
+
+# For vocab_a
+wordcloud_a = WordCloud()
+wordcloud_a.generate_from_frequencies(vocab_a)
+plt.imshow(wordcloud_a)
+plt.axis('off')
+plt.show()
+
+# For vocab_b
+wordcloud_b = WordCloud()
+wordcloud_b.generate_from_frequencies(vocab_b)
+plt.imshow(wordcloud_b)
+plt.axis('off')
+plt.show()
+
+# For vocab_c
+wordcloud_c = WordCloud()
+wordcloud_c.generate_from_frequencies(vocab_c)
+plt.imshow(wordcloud_c)
+plt.axis('off')
+plt.show()
+
+# Print the scores
+print("Score with CountVectorizer cv_a (5 to 20 letters):", score_a)
+print("Score with CountVectorizer cv_b (3 letters or less):", score_b)
+print("Score with CountVectorizer cv_c (3 to 6 words):", score_c)
+
+# Plot the scores
+plt.bar(["cv_a (5 to 20 letters)", "cv_b (3 letters or less)", "cv_c (3 to 6 words)"], [score_a, score_b, score_c])
+plt.ylabel("Score")
+plt.title("Comparison of Classifier Performance with Different CountVectorizer Settings")
+plt.show()
+
+# In this code, the print statements print the scores to the console, and the plt.bar function creates a bar 
+# plot where the x-axis is the different CountVectorizer settings and the y-axis is the scores. 
+# The plt.ylabel and plt.title functions set the label of the y-axis and the title of the plot, respectively. 
+# The plt.show function displays the plot.
+
+# This will give you a visual comparison of the performance of the classifier with the different 
+# CountVectorizer settings. The higher the score, the better the classifier performed with that setting.
+
+from skimage.draw import disk
+
+# Define the size of the image (mask)
+image_size = (500, 500)
+
+# Create a full (white) image
+mask = np.full(image_size, 255)
+
+# Define the radius and center of the disk (circle)
+radius = min(image_size) // 2 - 10
+center = (min(image_size) // 2, min(image_size) // 2)
+
+# Draw a black disk (circle) on the image
+rr, cc = disk(center, radius, shape=image_size)
+mask[rr, cc] = 0
+
+# Now you can use this mask with the WordCloud function
+wordcloud = WordCloud(background_color="white", mask=mask)
+
+# For vocab_a
+wordcloud_a = WordCloud(background_color="black", mask=mask)
+wordcloud_a.generate_from_frequencies(vocab_a)
+plt.imshow(wordcloud_a, interpolation='bilinear')
+plt.axis('off')
+plt.show()
+
+# For vocab_b
+wordcloud_b = WordCloud(background_color="black", mask=mask)
+wordcloud_b.generate_from_frequencies(vocab_b)
+plt.imshow(wordcloud_b, interpolation='bilinear')
+plt.axis('off')
+plt.show()
+
+# For vocab_c
+wordcloud_c = WordCloud(background_color="black", mask=mask)
+wordcloud_c.generate_from_frequencies(vocab_c)
+plt.imshow(wordcloud_c, interpolation='bilinear')
+plt.axis('off')
+plt.show()
